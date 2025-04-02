@@ -6,6 +6,8 @@ from std_msgs.msg import Float64
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
 from math import cos, sin, atan2, sqrt
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
 
 class OdomPublisher(Node):
     def __init__(self):
@@ -32,6 +34,9 @@ class OdomPublisher(Node):
 
         # Create a timer for updating odometry
         self.timer = self.create_timer(self.time_interval, self.update_odometry)
+
+        # To publish TF from odom to base_link
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
     def left_rpm_callback(self, msg):
         self.left_motor_rpm = msg.data
@@ -67,6 +72,17 @@ class OdomPublisher(Node):
 
         # Publish the odometry message
         self.odom_pub.publish(self.odom_msg)
+
+        # Publish the TF from odom -> base_link
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "odom"
+        t.child_frame_id = "base_link"
+        t.transform.translation.x = self.odom_msg.pose.pose.position.x
+        t.transform.translation.y = self.odom_msg.pose.pose.position.y
+        t.transform.translation.z = 0.0
+        t.transform.rotation = self.odom_msg.pose.pose.orientation
+        self.tf_broadcaster.sendTransform(t)
 
     def yaw_to_quaternion(self, yaw):
         """Convert a yaw angle (in radians) to a quaternion message."""
