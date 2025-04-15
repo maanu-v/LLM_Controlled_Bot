@@ -19,6 +19,15 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(rplidar_launch_file)
         ),
 
+       # For publishing static_transform from base_link -> laser
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_base_link_to_laser',
+            arguments=['0','0','0','0','0','0','base_link','laser'],
+            output='screen'
+        ),
+
         # For motor intialisation
         Node(
             package='bot_movement',
@@ -42,4 +51,6 @@ def generate_launch_description():
             name='odom_publisher',
             output='screen'
         ),
+
+        
     ])
