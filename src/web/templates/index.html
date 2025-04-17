@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Control Interface</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i>Robot Control Interface</h1>
+            <div class="connection-info">
+                <span id="connection-status" class="disconnected">Disconnected</span>
+            </div>
+        </header>
+
+        <div class="control-panel card">
+            <div class="direction-controls">
+                <h2><i class="fas fa-gamepad"></i>Direction Controls</h2>
+
+                <div class="control-pad">
+                    <button id="forward-btn" class="control-btn forward" aria-label="Move Forward">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <div class="middle-row">
+                        <button id="left-btn" class="control-btn left" aria-label="Turn Left">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button id="stop-btn" class="control-btn stop" aria-label="Stop">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <button id="right-btn" class="control-btn right" aria-label="Turn Right">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <button id="backward-btn" class="control-btn backward" aria-label="Move Backward">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+
+                <div class="control-help">
+                    <i class="fas fa-keyboard"></i> Keyboard controls available
+                    <div class="keyboard-controls">
+                        <div class="key-desc">
+                            <span class="key">↑</span>
+                            <span>Move Forward</span>
+                        </div>
+                        <div class="key-desc">
+                            <span class="key">↓</span>
+                            <span>Move Backward</span>
+                        </div>
+                        <div class="key-desc">
+                            <span class="key">←</span>
+                            <span>Turn Left</span>
+                        </div>
+                        <div class="key-desc">
+                            <span class="key">→</span>
+                            <span>Turn Right</span>
+                        </div>
+                        <div class="key-desc">
+                            <span class="key">Space</span>
+                            <span>Stop</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="speed-controls">
+                <h2><i class="fas fa-tachometer-alt"></i>Speed Controls</h2>
+
+                <div class="speed-control">
+                    <label for="linear-speed">Linear Speed:</label>
+                    <input type="range" id="linear-speed" min="0.1" max="1.0" step="0.1" value="0.5">
+                    <span id="linear-speed-value">0.5 m/s</span>
+                </div>
+
+                <div class="speed-control" id="angular-speed-container">
+                    <label for="angular-speed">Angular Speed:</label>
+                    <input type="range" id="angular-speed" min="0.1" max="1.0" step="0.1" value="0.5">
+                    <span id="angular-speed-value">0.5 rad/s</span>
+                </div>
+
+                <button id="update-speed-btn">Update Speed</button>
+            </div>
+
+            <div class="status-panel">
+                <h2><i class="fas fa-info-circle"></i>Status</h2>
+                <div id="status-message">Connecting to robot...</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Robot Control Interface v1.0</p>
+        </footer>
+    </div>
+
+    <script src="/static/robot_control.js"></script>
+</body>
+
+</html>

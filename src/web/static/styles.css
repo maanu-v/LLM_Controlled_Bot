@@ -1,0 +1,237 @@
+:root {
+    --primary-color: #3498db;
+    --accent-color: #2ecc71;
+    --warning-color: #e74c3c;
+    --dark-color: #2c3e50;
+    --light-color: #ecf0f1;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+h1 {
+    margin: 0;
+    color: var(--dark-color);
+    font-size: 28px;
+}
+
+h1 i,
+h2 i {
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+h2 {
+    margin-top: 0;
+    color: var(--dark-color);
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.connection-info {
+    display: flex;
+    align-items: center;
+}
+
+.card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eee;
+}
+
+.control-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.direction-controls {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.speed-controls {
+    grid-column: 2;
+}
+
+.status-panel {
+    grid-column: 1 / -1;
+}
+
+.control-pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.middle-row {
+    display: flex;
+    gap: 10px;
+}
+
+.control-btn {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.forward,
+.backward,
+.left,
+.right {
+    background-color: var(--accent-color);
+}
+
+.forward:hover,
+.backward:hover,
+.left:hover,
+.right:hover {
+    background-color: #27ae60;
+    transform: scale(1.05);
+}
+
+.stop {
+    background-color: var(--warning-color);
+}
+
+.stop:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+/* Keyboard Controls Popup */
+.control-help {
+    text-align: center;
+    color: #7f8c8d;
+    position: relative;
+    cursor: help;
+}
+
+.keyboard-controls {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: var(--shadow);
+    width: 250px;
+    display: none;
+    z-index: 100;
+    border: 1px solid #ddd;
+}
+
+.control-help:hover .keyboard-controls {
+    display: block;
+}
+
+.key {
+    display: inline-block;
+    background-color: var(--light-color);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin: 2px;
+    min-width: 30px;
+    text-align: center;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+}
+
+.key-desc {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+/* Make sure angular speed slider has proper styling */
+#angular-speed-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#angular-speed-container label {
+    min-width: 120px;
+    font-weight: 500;
+}
+
+#angular-speed {
+    flex-grow: 1;
+    accent-color: var(--primary-color);
+}
+
+#angular-speed-value {
+    min-width: 80px;
+    text-align: right;
+    font-weight: 500;
+}
+
+/* Ensure buttons work properly with proper focus states */
+.control-btn:focus {
+    outline: 3px solid rgba(52, 152, 219, 0.5);
+}
+
+/* Fix mobile responsiveness for control panel */
+@media (max-width: 768px) {
+    .control-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .direction-controls,
+    .speed-controls {
+        grid-column: 1;
+    }
+
+    .keyboard-controls {
+        width: 200px;
+    }
+}
