@@ -1,7 +1,11 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
+from std_msgs.msg import String, Float32
+from sensor_msgs.msg import Image, LaserScan
+from nav_msgs.msg import Odometry, OccupancyGrid
+from geometry_msgs.msg import Twist
+import tf2_ros
+import numpy as np
 import threading
 import socket
 import json
@@ -11,7 +15,6 @@ import hashlib
 import struct
 import re
 import cv2
-import numpy as np
 from cv_bridge import CvBridge
 
 class WebBridge(Node):
@@ -20,7 +23,7 @@ class WebBridge(Node):
         
         # Publisher for sending commands from the web to ROS
         self.command_publisher = self.create_publisher(
-            String, 'web_commands', 10
+            Twist, '/cmd_vel', 10
         )
         
         # Subscriber for camera images
@@ -30,6 +33,36 @@ class WebBridge(Node):
             self.image_callback,
             10
         )
+        
+        # Subscribe directly to actual robot state topics
+        self.odom_subscription = self.create_subscription(
+            Odometry, '/odom', self.actual_odom_callback, 10
+        )
+        self.map_subscription = self.create_subscription(
+            OccupancyGrid, '/map', self.actual_map_callback, 10
+        )
+        self.scan_subscription = self.create_subscription(
+            LaserScan, '/scan', self.actual_scan_callback, 10
+        )
+        
+        # Motor RPM subscriptions for telemetry
+        self.left_motor_rpm_subscription = self.create_subscription(
+            Float32, '/left_motor_rpm', self.left_motor_rpm_callback, 10
+        )
+        self.right_motor_rpm_subscription = self.create_subscription(
+            Float32, '/right_motor_rpm', self.right_motor_rpm_callback, 10
+        )
+        
+        # TF buffer for transformations
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        
+        # Store latest data
+        self.latest_odom = None
+        self.latest_map = None
+        self.latest_scan = None
+        self.left_motor_rpm = 0
+        self.right_motor_rpm = 0
         
         # OpenCV bridge for converting ROS images to OpenCV format
         self.cv_bridge = CvBridge()
@@ -44,9 +77,205 @@ class WebBridge(Node):
         self.server_thread.daemon = True
         self.running = True
         
+        # Set up a timer to broadcast telemetry data
+        self.telemetry_timer = self.create_timer(0.5, self.broadcast_telemetry)
+        
         self.get_logger().info(f'Web bridge starting on port {port}')
         self.server_thread.start()
+    
+    def broadcast_telemetry(self):
+        """Broadcasts overall telemetry data to clients"""
+        if not self.websocket_clients:
+            return  # Skip if no clients connected
         
+        try:
+            # Calculate battery level - this is a placeholder
+            # In a real robot, you would read battery voltage or state of charge
+            battery_level = 85  # Placeholder value in percentage
+            
+            # Create telemetry message
+            telemetry_msg = {
+                'type': 'telemetry_data',
+                'data': {
+                    'battery_level': battery_level,
+                    'left_motor_rpm': self.left_motor_rpm,
+                    'right_motor_rpm': self.right_motor_rpm,
+                    'connection': 'connected'
+                }
+            }
+            
+            ws_data = json.dumps(telemetry_msg).encode('utf-8')
+            self._send_to_all_websocket_clients(ws_data)
+        except Exception as e:
+            self.get_logger().error(f'Error sending telemetry data: {e}')
+    
+    def left_motor_rpm_callback(self, msg):
+        """Store left motor RPM data"""
+        self.left_motor_rpm = msg.data
+        
+    def right_motor_rpm_callback(self, msg):
+        """Store right motor RPM data"""
+        self.right_motor_rpm = msg.data
+    
+    def actual_odom_callback(self, msg):
+        """Process actual odometry data from ROS topic"""
+        if not self.websocket_clients:
+            return  # Skip if no clients connected
+            
+        try:
+            # Store latest odom data
+            self.latest_odom = msg
+            
+            # Convert ROS odometry message to JSON-serializable format
+            position = msg.pose.pose.position
+            orientation = msg.pose.pose.orientation
+            linear = msg.twist.twist.linear
+            angular = msg.twist.twist.angular
+            
+            odom_data = {
+                'position': {
+                    'x': position.x,
+                    'y': position.y,
+                    'z': position.z
+                },
+                'orientation': {
+                    'x': orientation.x,
+                    'y': orientation.y,
+                    'z': orientation.z,
+                    'w': orientation.w
+                },
+                'twist': {
+                    'linear': {
+                        'x': linear.x,
+                        'y': linear.y,
+                        'z': linear.z
+                    },
+                    'angular': {
+                        'x': angular.x,
+                        'y': angular.y,
+                        'z': angular.z
+                    }
+                },
+                'timestamp': msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+            }
+            
+            # Create JSON message
+            odom_msg = {
+                'type': 'odom_data',
+                'data': odom_data
+            }
+            ws_data = json.dumps(odom_msg).encode('utf-8')
+            
+            # Send to all connected WebSocket clients
+            self._send_to_all_websocket_clients(ws_data)
+        except Exception as e:
+            self.get_logger().error(f'Error processing odometry data: {e}')
+            
+    def actual_map_callback(self, msg):
+        """Process actual map data from ROS topic"""
+        if not self.websocket_clients:
+            return  # Skip if no clients connected
+            
+        try:
+            # Store latest map data
+            self.latest_map = msg
+            
+            # Convert ROS occupancy grid to JSON-serializable format
+            width = msg.info.width
+            height = msg.info.height
+            resolution = msg.info.resolution
+            origin_x = msg.info.origin.position.x
+            origin_y = msg.info.origin.position.y
+            
+            # Convert map data array (int8[]) to regular list
+            data = [int(cell) for cell in msg.data]
+            
+            map_data = {
+                'width': width,
+                'height': height,
+                'resolution': resolution,
+                'origin': {
+                    'x': origin_x,
+                    'y': origin_y
+                },
+                'data': data
+            }
+            
+            # Create JSON message
+            map_msg = {
+                'type': 'map_data',
+                'data': map_data
+            }
+            ws_data = json.dumps(map_msg).encode('utf-8')
+            
+            # Send to all connected WebSocket clients
+            self._send_to_all_websocket_clients(ws_data)
+        except Exception as e:
+            self.get_logger().error(f'Error processing map data: {e}')
+            
+    def actual_scan_callback(self, msg):
+        """Process actual LIDAR scan data from ROS topic"""
+        if not self.websocket_clients:
+            return  # Skip if no clients connected
+            
+        try:
+            # Store latest scan data
+            self.latest_scan = msg
+            
+            # Convert LaserScan message to JSON-serializable format
+            angle_min = msg.angle_min
+            angle_max = msg.angle_max
+            angle_increment = msg.angle_increment
+            range_min = msg.range_min
+            range_max = msg.range_max
+            scan_time = msg.scan_time
+            
+            # Convert ranges to regular list (filter out infinities)
+            ranges = []
+            for r in msg.ranges:
+                if r == float('inf'):
+                    ranges.append(range_max)
+                elif r == float('-inf'):
+                    ranges.append(range_min)
+                else:
+                    ranges.append(float(r))
+            
+            scan_data = {
+                'angle_min': angle_min,
+                'angle_max': angle_max,
+                'angle_increment': angle_increment,
+                'range_min': range_min,
+                'range_max': range_max,
+                'scan_time': scan_time,
+                'ranges': ranges
+            }
+            
+            # Create JSON message
+            scan_msg = {
+                'type': 'scan_data',
+                'data': scan_data
+            }
+            ws_data = json.dumps(scan_msg).encode('utf-8')
+            
+            # Send to all connected WebSocket clients
+            self._send_to_all_websocket_clients(ws_data)
+        except Exception as e:
+            self.get_logger().error(f'Error processing LIDAR scan data: {e}')
+    
+    def _send_to_all_websocket_clients(self, data):
+        """Helper method to send data to all connected WebSocket clients"""
+        with self.websocket_clients_lock:
+            disconnected_clients = set()
+            for client in self.websocket_clients:
+                try:
+                    self._send_websocket_message(client, data)
+                except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                    disconnected_clients.add(client)
+            
+            # Remove any disconnected clients
+            for client in disconnected_clients:
+                self.websocket_clients.remove(client)
+    
     def image_callback(self, msg):
         """Process incoming camera images and send to WebSocket clients"""
         if not self.websocket_clients:
@@ -56,7 +285,17 @@ class WebBridge(Node):
             # Convert ROS Image to OpenCV format
             cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             
-            # Compress the image to JPEG
+            # Resize image for web streaming (reduce bandwidth)
+            height, width = cv_image.shape[:2]
+            max_width = 640  # Maximum width for web display
+            
+            if width > max_width:
+                # Calculate new height to maintain aspect ratio
+                scale_factor = max_width / float(width)
+                new_height = int(height * scale_factor)
+                cv_image = cv2.resize(cv_image, (max_width, new_height))
+            
+            # Compress the image to JPEG (quality 70%)
             _, jpeg_image = cv2.imencode('.jpg', cv_image, [cv2.IMWRITE_JPEG_QUALITY, 70])
             
             # Encode to base64 for WebSocket transmission
@@ -65,22 +304,15 @@ class WebBridge(Node):
             # Create a JSON message with the image data
             image_msg = {
                 'type': 'camera_feed',
-                'data': encoded_image
+                'data': encoded_image,
+                'timestamp': msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9,
+                'width': cv_image.shape[1],
+                'height': cv_image.shape[0]
             }
             image_data = json.dumps(image_msg).encode('utf-8')
             
             # Send to all connected WebSocket clients
-            with self.websocket_clients_lock:
-                disconnected_clients = set()
-                for client in self.websocket_clients:
-                    try:
-                        self._send_websocket_message(client, image_data)
-                    except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-                        disconnected_clients.add(client)
-                
-                # Remove any disconnected clients
-                for client in disconnected_clients:
-                    self.websocket_clients.remove(client)
+            self._send_to_all_websocket_clients(image_data)
                     
         except Exception as e:
             self.get_logger().error(f'Error processing camera image: {e}')
@@ -329,24 +561,31 @@ class WebBridge(Node):
     
     def _process_command(self, command, params=None):
         """Process a command from the web interface and publish to ROS"""
-        msg = String()
+        # Create a Twist message for movement commands
+        twist_msg = Twist()
         
-        if command == 'move' and params:
-            # Format a more specific movement command with direction and speeds
-            direction = params.get('direction', 'stop')
+        if command == 'forward':
+            twist_msg.linear.x = params.get('speed', 0.5)  # Default to 0.5 m/s if not specified
+        elif command == 'backward':
+            twist_msg.linear.x = -params.get('speed', 0.5)  # Negative for backward
+        elif command == 'left':
+            twist_msg.angular.z = params.get('speed', 0.5)  # Positive for counterclockwise
+        elif command == 'right':
+            twist_msg.angular.z = -params.get('speed', 0.5)  # Negative for clockwise
+        elif command == 'stop' or command == 'emergency_stop':
+            # Stop all motion
+            pass  # Twist defaults to all zeros
+        elif command == 'move' and params:
+            # Direct control of linear and angular velocity
             linear = params.get('linear', 0.0)
             angular = params.get('angular', 0.0)
             
-            msg.data = f"{direction}:linear={linear},angular={angular}"
-        elif params:
-            # Format other commands with parameters
-            param_str = ','.join([f"{k}={v}" for k, v in params.items()])
-            msg.data = f"{command}:{param_str}"
-        else:
-            msg.data = command
+            twist_msg.linear.x = float(linear)
+            twist_msg.angular.z = float(angular)
             
-        self.command_publisher.publish(msg)
-        self.get_logger().info(f'Published command: {msg.data}')
+        # Publish the twist message to control the robot
+        self.command_publisher.publish(twist_msg)
+        self.get_logger().info(f'Published command: {command} with twist: linear.x={twist_msg.linear.x}, angular.z={twist_msg.angular.z}')
 
 def main(args=None):
     rclpy.init(args=args)

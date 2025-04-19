@@ -5,378 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mark Robot Control Interface</title>
-    <style>
-        :root {
-            --neon-blue: #00f3ff;
-            --neon-pink: #ff00ff;
-            --neon-green: #39ff14;
-            --dark-bg: #0f1320;
-            --darker-bg: #070b14;
-            --panel-bg: rgba(15, 25, 40, 0.8);
-            --glow-blue: 0 0 10px rgba(0, 243, 255, 0.7);
-            --glow-pink: 0 0 10px rgba(255, 0, 255, 0.7);
-            --glow-green: 0 0 10px rgba(57, 255, 20, 0.7);
-        }
-
-        @font-face {
-            font-family: 'Orbitron';
-            src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        }
-
-        body {
-            font-family: 'Orbitron', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--dark-bg);
-            color: white;
-            overflow-x: hidden;
-            background-image: linear-gradient(45deg, var(--darker-bg) 25%, transparent 25%),
-                linear-gradient(-45deg, var(--darker-bg) 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, var(--darker-bg) 75%),
-                linear-gradient(-45deg, transparent 75%, var(--darker-bg) 75%);
-            background-size: 20px 20px;
-        }
-
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 280px;
-            background-color: var(--panel-bg);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid var(--neon-blue);
-            box-shadow: var(--glow-blue);
-            position: relative;
-            z-index: 10;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        h1,
-        h2,
-        h3 {
-            color: var(--neon-blue);
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 0;
-            text-shadow: var(--glow-blue);
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo h1 {
-            font-size: 2rem;
-            margin: 0;
-            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
-        }
-
-        .camera-feed {
-            width: 100%;
-            margin: 20px auto;
-            text-align: center;
-            background-color: var(--panel-bg);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid var(--neon-green);
-            box-shadow: var(--glow-green);
-        }
-
-        #camera-stream {
-            max-width: 100%;
-            border: 2px solid var(--neon-green);
-            border-radius: 8px;
-            box-shadow: var(--glow-green);
-        }
-
-        .control-group {
-            margin: 25px 0;
-            padding: 15px;
-            background-color: var(--panel-bg);
-            border-radius: 10px;
-            border: 1px solid var(--neon-pink);
-            box-shadow: var(--glow-pink);
-        }
-
-        .control-group h3 {
-            color: var(--neon-pink);
-            margin-top: 0;
-            text-shadow: var(--glow-pink);
-        }
-
-        .directional-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 10px;
-            margin: 20px auto;
-            max-width: 240px;
-        }
-
-        .direction-btn {
-            height: 70px;
-            font-size: 1.2rem;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: 2px solid var(--neon-blue);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: var(--glow-blue);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        .direction-btn:hover {
-            background-color: rgba(0, 243, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        .direction-btn:active,
-        .direction-btn.active {
-            transform: scale(0.95);
-            background-color: rgba(0, 243, 255, 0.4);
-        }
-
-        .direction-btn.center {
-            grid-column: 2;
-            grid-row: 2;
-            border-color: var(--neon-pink);
-            box-shadow: var(--glow-pink);
-        }
-
-        .direction-btn.up {
-            grid-column: 2;
-            grid-row: 1;
-        }
-
-        .direction-btn.down {
-            grid-column: 2;
-            grid-row: 3;
-        }
-
-        .direction-btn.left {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        .direction-btn.right {
-            grid-column: 3;
-            grid-row: 2;
-        }
-
-        .speed-control {
-            margin: 20px 0;
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            margin: 15px 0;
-            gap: 10px;
-        }
-
-        .slider-container label {
-            min-width: 60px;
-            color: var(--neon-blue);
-            text-shadow: var(--glow-blue);
-        }
-
-        .slider {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 8px;
-            border-radius: 5px;
-            background: #111;
-            outline: none;
-            background: linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-pink) 100%);
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            cursor: pointer;
-            box-shadow: 0 0 10px var(--neon-green);
-        }
-
-        .slider::-moz-range-thumb {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            cursor: pointer;
-            box-shadow: 0 0 10px var(--neon-green);
-        }
-
-        .speed-value {
-            min-width: 60px;
-            font-size: 1.2rem;
-            color: var(--neon-green);
-            text-align: center;
-            font-weight: bold;
-            text-shadow: var(--glow-green);
-        }
-
-        .emergency-stop {
-            margin-top: auto;
-            padding-top: 20px;
-        }
-
-        .stop-btn {
-            width: 100%;
-            padding: 20px;
-            font-size: 1.5rem;
-            background-color: rgba(255, 0, 0, 0.2);
-            color: white;
-            border: 2px solid #ff0000;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        }
-
-        .stop-btn:hover {
-            background-color: rgba(255, 0, 0, 0.4);
-            transform: scale(1.02);
-        }
-
-        .stop-btn:active {
-            transform: scale(0.98);
-            background-color: rgba(255, 0, 0, 0.6);
-        }
-
-        .status-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 10px 20px;
-            background-color: var(--panel-bg);
-            border-top: 1px solid var(--neon-blue);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--glow-blue);
-            z-index: 100;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background-color: red;
-            margin-right: 10px;
-        }
-
-        .status-indicator.connected {
-            background-color: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-        }
-
-        .keyboard-shortcuts {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 5px;
-        }
-
-        .keyboard-shortcuts div {
-            margin: 5px 0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .key {
-            display: inline-block;
-            padding: 5px 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            border: 1px solid var(--neon-blue);
-            border-radius: 5px;
-            color: var(--neon-blue);
-            font-family: monospace;
-            font-size: 0.9rem;
-            margin-left: 10px;
-            box-shadow: var(--glow-blue);
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        .telemetry {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .telemetry-item {
-            flex: 1;
-            min-width: 150px;
-            padding: 15px;
-            background-color: var(--panel-bg);
-            border: 1px solid var(--neon-green);
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: var(--glow-green);
-        }
-
-        .telemetry-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--neon-green);
-            animation: pulse 2s infinite;
-        }
-
-        /* Responsive design adjustments */
-        @media (max-width: 768px) {
-            .layout {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 2px solid var(--neon-blue);
-            }
-
-            .main-content {
-                padding: 10px;
-            }
-
-            .telemetry-item {
-                min-width: 100px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -460,6 +89,120 @@
                 </div>
             </div>
 
+            <!-- Visualization Section -->
+            <div class="visualization-section">
+                <h2>Sensor Visualization</h2>
+                <div class="viz-tabs">
+                    <div class="viz-tab active" data-tab="map-view">Map View</div>
+                    <div class="viz-tab" data-tab="lidar-view">LIDAR View</div>
+                    <div class="viz-tab" data-tab="odom-view">Odometry</div>
+                    <div class="viz-tab" data-tab="raw-data">Raw Data</div>
+                </div>
+
+                <!-- Map Visualization -->
+                <div class="viz-content active" id="map-view">
+                    <div class="viz-canvas-container">
+                        <canvas id="map-canvas" class="viz-canvas" width="800" height="600"></canvas>
+                    </div>
+                    <div class="viz-controls">
+                        <div class="viz-toggle-group">
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-map" checked>
+                                <span>Show Map</span>
+                            </label>
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-scan-on-map" checked>
+                                <span>Show LIDAR</span>
+                            </label>
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-path" checked>
+                                <span>Show Path</span>
+                            </label>
+                        </div>
+                        <div class="viz-buttons">
+                            <button class="viz-button" id="map-zoom-in">Zoom In</button>
+                            <button class="viz-button" id="map-zoom-out">Zoom Out</button>
+                            <button class="viz-button" id="map-reset">Reset View</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LIDAR Visualization -->
+                <div class="viz-content" id="lidar-view">
+                    <div class="viz-canvas-container">
+                        <canvas id="lidar-canvas" class="viz-canvas" width="800" height="600"></canvas>
+                    </div>
+                    <div class="viz-controls">
+                        <div class="viz-toggle-group">
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-lidar-rays" checked>
+                                <span>Show Rays</span>
+                            </label>
+                            <div class="viz-toggle">
+                                <span>Color Mode:</span>
+                                <select id="lidar-color-mode">
+                                    <option value="intensity">Intensity</option>
+                                    <option value="distance">Distance</option>
+                                    <option value="rainbow">Rainbow</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="viz-buttons">
+                            <button class="viz-button" id="lidar-zoom-in">Zoom In</button>
+                            <button class="viz-button" id="lidar-zoom-out">Zoom Out</button>
+                            <button class="viz-button" id="lidar-reset">Reset View</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Odometry Visualization -->
+                <div class="viz-content" id="odom-view">
+                    <div class="viz-canvas-container">
+                        <canvas id="odom-canvas" class="viz-canvas" width="800" height="600"></canvas>
+                    </div>
+                    <div class="viz-controls">
+                        <div class="viz-toggle-group">
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-velocity" checked>
+                                <span>Show Velocity</span>
+                            </label>
+                            <label class="viz-toggle">
+                                <input type="checkbox" id="show-pose" checked>
+                                <span>Show Pose</span>
+                            </label>
+                        </div>
+                        <div class="viz-buttons">
+                            <button class="viz-button" id="odom-zoom-in">Zoom In</button>
+                            <button class="viz-button" id="odom-zoom-out">Zoom Out</button>
+                            <button class="viz-button" id="odom-reset">Reset View</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Raw Data View -->
+                <div class="viz-content" id="raw-data">
+                    <div class="viz-controls">
+                        <div class="viz-toggle-group">
+                            <label class="viz-toggle">
+                                <input type="radio" name="data-type" value="odom" checked>
+                                <span>Odometry</span>
+                            </label>
+                            <label class="viz-toggle">
+                                <input type="radio" name="data-type" value="lidar">
+                                <span>LIDAR</span>
+                            </label>
+                            <label class="viz-toggle">
+                                <input type="radio" name="data-type" value="map">
+                                <span>Map</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="data-view" id="raw-data-content">
+                        No data available.
+                    </div>
+                </div>
+            </div>
+
             <div class="camera-feed">
                 <h2>Camera Feed</h2>
                 <img id="camera-stream"
@@ -477,201 +220,7 @@
         <div id="timestamp">00:00:00</div>
     </div>
 
-    <script>
-        let socket = null;
-        let linearSpeed = 0.5; // Default linear speed
-        let angularSpeed = 0.5; // Default angular speed
-        let isConnected = false;
-        let keyDownMap = {}; // To track which keys are currently pressed
-
-        // Update speed display when sliders change
-        document.getElementById('linear-speed-slider').addEventListener('input', function () {
-            linearSpeed = parseFloat(this.value);
-            document.getElementById('linear-speed-value').textContent = `${linearSpeed.toFixed(1)} m/s`;
-        });
-
-        document.getElementById('angular-speed-slider').addEventListener('input', function () {
-            angularSpeed = parseFloat(this.value);
-            document.getElementById('angular-speed-value').textContent = `${angularSpeed.toFixed(1)} rad/s`;
-        });
-
-        function updateConnectionStatus(connected) {
-            isConnected = connected;
-            const indicator = document.getElementById('status-indicator');
-            if (connected) {
-                indicator.classList.add('connected');
-            } else {
-                indicator.classList.remove('connected');
-            }
-        }
-
-        function updateTime() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            document.getElementById('timestamp').textContent = `${hours}:${minutes}:${seconds}`;
-        }
-
-        // Update time every second
-        setInterval(updateTime, 1000);
-        updateTime(); // Initial update
-
-        function connectWebSocket() {
-            // Use the same host but change to the WebBridge port
-            const host = window.location.hostname;
-            const port = 8765;  // Make sure this matches the WebBridge port
-
-            socket = new WebSocket(`ws://${host}:${port}`);
-
-            socket.onopen = function (e) {
-                console.log("WebSocket connection established");
-                document.getElementById('status-message').textContent = 'Connected to robot';
-                updateConnectionStatus(true);
-            };
-
-            socket.onmessage = function (event) {
-                try {
-                    const message = JSON.parse(event.data);
-
-                    // Handle camera feed updates
-                    if (message.type === 'camera_feed') {
-                        document.getElementById('camera-stream').src = 'data:image/jpeg;base64,' + message.data;
-                    }
-                    // Handle telemetry updates
-                    else if (message.type === 'telemetry') {
-                        if (message.speed !== undefined) {
-                            document.getElementById('current-speed').textContent = message.speed.toFixed(1) + ' m/s';
-                        }
-                        if (message.battery !== undefined) {
-                            document.getElementById('battery-level').textContent = message.battery + '%';
-                        }
-                        if (message.ping !== undefined) {
-                            document.getElementById('ping').textContent = message.ping + 'ms';
-                        }
-                    }
-                    // Handle other message types
-                    else if (message.status) {
-                        document.getElementById('status-message').textContent = message.message || 'Command received';
-                    }
-                } catch (e) {
-                    console.error("Error parsing message:", e);
-                }
-            };
-
-            socket.onclose = function (event) {
-                console.log("WebSocket connection closed");
-                document.getElementById('status-message').textContent = 'Disconnected from robot';
-                updateConnectionStatus(false);
-
-                // Try to reconnect after delay
-                setTimeout(connectWebSocket, 3000);
-            };
-
-            socket.onerror = function (error) {
-                console.error("WebSocket error:", error);
-                document.getElementById('status-message').textContent = 'Connection error';
-                updateConnectionStatus(false);
-            };
-        }
-
-        // Connect to WebSocket when page loads
-        window.addEventListener('load', connectWebSocket);
-
-        // Set up movement control buttons
-        document.getElementById('btn-forward').addEventListener('click', function () {
-            sendCommand('move', { direction: 'forward', linear: linearSpeed, angular: 0 });
-        });
-
-        document.getElementById('btn-backward').addEventListener('click', function () {
-            sendCommand('move', { direction: 'backward', linear: linearSpeed, angular: 0 });
-        });
-
-        document.getElementById('btn-left').addEventListener('click', function () {
-            sendCommand('move', { direction: 'left', linear: 0, angular: angularSpeed });
-        });
-
-        document.getElementById('btn-right').addEventListener('click', function () {
-            sendCommand('move', { direction: 'right', linear: 0, angular: angularSpeed });
-        });
-
-        document.getElementById('btn-stop').addEventListener('click', function () {
-            sendCommand('stop');
-        });
-
-        document.getElementById('emergency-stop').addEventListener('click', function () {
-            sendCommand('emergency_stop');
-            document.getElementById('status-message').textContent = 'EMERGENCY STOP ACTIVATED';
-        });
-
-        // Keyboard controls
-        document.addEventListener('keydown', function (event) {
-            if (keyDownMap[event.key]) return; // Prevent key repeat
-            keyDownMap[event.key] = true;
-
-            switch (event.key) {
-                case 'ArrowUp':
-                    document.getElementById('btn-forward').classList.add('active');
-                    sendCommand('move', { direction: 'forward', linear: linearSpeed, angular: 0 });
-                    break;
-                case 'ArrowDown':
-                    document.getElementById('btn-backward').classList.add('active');
-                    sendCommand('move', { direction: 'backward', linear: linearSpeed, angular: 0 });
-                    break;
-                case 'ArrowLeft':
-                    document.getElementById('btn-left').classList.add('active');
-                    sendCommand('move', { direction: 'left', linear: 0, angular: angularSpeed });
-                    break;
-                case 'ArrowRight':
-                    document.getElementById('btn-right').classList.add('active');
-                    sendCommand('move', { direction: 'right', linear: 0, angular: angularSpeed });
-                    break;
-                case ' ':  // Space bar
-                    document.getElementById('btn-stop').classList.add('active');
-                    sendCommand('stop');
-                    break;
-            }
-        });
-
-        document.addEventListener('keyup', function (event) {
-            keyDownMap[event.key] = false;
-
-            switch (event.key) {
-                case 'ArrowUp':
-                    document.getElementById('btn-forward').classList.remove('active');
-                    sendCommand('stop');
-                    break;
-                case 'ArrowDown':
-                    document.getElementById('btn-backward').classList.remove('active');
-                    sendCommand('stop');
-                    break;
-                case 'ArrowLeft':
-                    document.getElementById('btn-left').classList.remove('active');
-                    sendCommand('stop');
-                    break;
-                case 'ArrowRight':
-                    document.getElementById('btn-right').classList.remove('active');
-                    sendCommand('stop');
-                    break;
-                case ' ':  // Space bar
-                    document.getElementById('btn-stop').classList.remove('active');
-                    break;
-            }
-        });
-
-        function sendCommand(command, params = {}) {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                const message = {
-                    command: command,
-                    params: params
-                };
-                socket.send(JSON.stringify(message));
-                document.getElementById('status-message').textContent = `Sent command: ${command}`;
-            } else {
-                document.getElementById('status-message').textContent = 'Not connected to robot';
-            }
-        }
-    </script>
+    <script src="robot_control.js"></script>
 </body>
 
 </html>
