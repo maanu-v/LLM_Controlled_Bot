@@ -26,6 +26,10 @@ setup(
     entry_points={
         'console_scripts': [
             'saver_node = image_pkg.saver_node:main',
+            'image_capture_node = image_pkg.image_capture_node:main',
+            'object_detection_node = image_pkg.object_detection_node:main',
+            'viewpoint_planner = image_pkg.viewpoint_planner:main',
+            'semantic_memory = image_pkg.semantic_memory:main'
         ],
     },
 )
